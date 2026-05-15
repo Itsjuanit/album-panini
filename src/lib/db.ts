@@ -90,6 +90,10 @@ export async function setNotes(id: number, notes: string) {
 	await db.states.update(id, { notes, updatedAt: Date.now() });
 }
 
+export async function setStickerLabel(id: number, label: string) {
+	await db.stickers.update(id, { label });
+}
+
 export async function renameTeam(oldName: string, newName: string) {
 	if (oldName === newName) return;
 	await db.transaction('rw', db.stickers, db.teams, async () => {

@@ -65,6 +65,10 @@
 			<span class="icon">🃏</span>
 			<span class="lbl">Figus</span>
 		</a>
+		<a href="/equipos" class:active={page.url.pathname.startsWith('/equipos')}>
+			<span class="icon">🛡️</span>
+			<span class="lbl">Equipos</span>
+		</a>
 		<a href="/canjes" class:active={page.url.pathname.startsWith('/canjes')}>
 			<span class="icon">🔄</span>
 			<span class="lbl">Canjes</span>
@@ -250,19 +254,21 @@
 	.bottom-nav a {
 		color: var(--muted);
 		text-decoration: none;
-		font-size: 0.7rem;
-		padding: 0.5rem 0.9rem;
-		border-radius: 14px;
+		font-size: 0.68rem;
+		padding: 0.4rem 0.5rem;
+		border-radius: 12px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 2px;
 		transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-		min-width: 70px;
+		min-width: 60px;
 		font-weight: 600;
+		flex: 1;
+		max-width: 100px;
 	}
 	.bottom-nav a .icon {
-		font-size: 1.4rem;
+		font-size: 1.3rem;
 		transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 	.bottom-nav a.active {
