@@ -1,0 +1,278 @@
+<script lang="ts">
+	import { ensureSeeded } from '$lib/db';
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { fade, fly } from 'svelte/transition';
+
+	let { children } = $props();
+	let ready = $state(false);
+
+	onMount(async () => {
+		await ensureSeeded();
+		ready = true;
+	});
+</script>
+
+<svelte:head>
+	<title>Álbum Panini Mundial 2026</title>
+	<meta name="theme-color" content="#0b6b2e" />
+</svelte:head>
+
+<div class="app">
+	<div class="stadium-bg" aria-hidden="true">
+		<div class="orb orb-1"></div>
+		<div class="orb orb-2"></div>
+		<div class="orb orb-3"></div>
+	</div>
+
+	<header>
+		<div class="header-inner">
+			<div class="logo">
+				<div class="ball" aria-hidden="true">
+					<svg viewBox="0 0 40 40" width="34" height="34">
+						<circle cx="20" cy="20" r="18" fill="white" stroke="#111" stroke-width="1.5" />
+						<polygon points="20,10 26,14 24,21 16,21 14,14" fill="#111" />
+						<polygon points="20,10 26,14 31,11 28,4 18,5" fill="white" stroke="#111" stroke-width="0.8" />
+					</svg>
+				</div>
+				<div class="title">
+					<span class="t1">ÁLBUM</span>
+					<span class="t2">Mundial 2026</span>
+				</div>
+			</div>
+		</div>
+	</header>
+
+	<main>
+		{#if ready}
+			<div in:fade={{ duration: 250 }}>
+				{@render children()}
+			</div>
+		{:else}
+			<div class="loading" in:fade>
+				<div class="loader-ball" aria-hidden="true">⚽</div>
+				<p>Armando el álbum…</p>
+			</div>
+		{/if}
+	</main>
+
+	<nav class="bottom-nav">
+		<a href="/" class:active={page.url.pathname === '/'}>
+			<span class="icon">📊</span>
+			<span class="lbl">Resumen</span>
+		</a>
+		<a href="/figus" class:active={page.url.pathname.startsWith('/figus')}>
+			<span class="icon">🃏</span>
+			<span class="lbl">Figus</span>
+		</a>
+		<a href="/canjes" class:active={page.url.pathname.startsWith('/canjes')}>
+			<span class="icon">🔄</span>
+			<span class="lbl">Canjes</span>
+		</a>
+	</nav>
+</div>
+
+<style>
+	:global(:root) {
+		--field-1: #0b6b2e;
+		--field-2: #0a3d0a;
+		--night: #0a1a2e;
+		--gold: #fbbf24;
+		--gold-2: #f59e0b;
+		--ice: #f8fafc;
+		--card: rgba(255, 255, 255, 0.06);
+		--card-solid: #142035;
+		--border: rgba(255, 255, 255, 0.12);
+		--text: #f8fafc;
+		--muted: #94a3b8;
+		--good: #22c55e;
+		--good-glow: rgba(34, 197, 94, 0.4);
+		--warn: #f59e0b;
+		--bad: #ef4444;
+		--accent: #3b82f6;
+		--accent-2: #06b6d4;
+	}
+	:global(html, body) {
+		margin: 0;
+		padding: 0;
+		background: var(--night);
+		color: var(--text);
+		font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+		-webkit-tap-highlight-color: transparent;
+		overscroll-behavior: none;
+		min-height: 100dvh;
+	}
+	:global(*) { box-sizing: border-box; }
+	:global(button) { font-family: inherit; }
+
+	.app {
+		min-height: 100dvh;
+		display: flex;
+		flex-direction: column;
+		position: relative;
+		overflow-x: hidden;
+	}
+
+	.stadium-bg {
+		position: fixed;
+		inset: 0;
+		z-index: -1;
+		background:
+			radial-gradient(ellipse at top, #1a3a5c 0%, transparent 60%),
+			radial-gradient(ellipse at bottom, var(--field-2) 0%, transparent 70%),
+			linear-gradient(180deg, var(--night) 0%, #0a2540 50%, var(--field-2) 100%);
+	}
+	.orb {
+		position: absolute;
+		border-radius: 50%;
+		filter: blur(80px);
+		opacity: 0.35;
+		animation: float 18s ease-in-out infinite;
+	}
+	.orb-1 {
+		width: 280px; height: 280px;
+		background: var(--good);
+		top: -80px; left: -80px;
+	}
+	.orb-2 {
+		width: 220px; height: 220px;
+		background: var(--gold);
+		top: 30%; right: -80px;
+		animation-delay: -6s;
+	}
+	.orb-3 {
+		width: 320px; height: 320px;
+		background: var(--accent);
+		bottom: -120px; left: 20%;
+		animation-delay: -12s;
+	}
+	@keyframes float {
+		0%, 100% { transform: translate(0, 0) scale(1); }
+		33% { transform: translate(30px, -40px) scale(1.1); }
+		66% { transform: translate(-20px, 30px) scale(0.95); }
+	}
+
+	header {
+		padding: 0.9rem 1rem;
+		background: linear-gradient(135deg, rgba(11, 107, 46, 0.9), rgba(10, 26, 46, 0.9));
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
+		border-bottom: 1px solid var(--border);
+		position: sticky;
+		top: 0;
+		z-index: 10;
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+	}
+	.header-inner {
+		max-width: 720px;
+		margin: 0 auto;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+	.logo {
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+	}
+	.ball {
+		display: flex;
+		animation: bounce 2.2s ease-in-out infinite;
+		filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+	}
+	@keyframes bounce {
+		0%, 100% { transform: translateY(0) rotate(0deg); }
+		25% { transform: translateY(-6px) rotate(15deg); }
+		50% { transform: translateY(0) rotate(0deg); }
+		75% { transform: translateY(-3px) rotate(-10deg); }
+	}
+	.title {
+		display: flex;
+		flex-direction: column;
+		line-height: 1;
+	}
+	.t1 {
+		font-size: 0.7rem;
+		letter-spacing: 3px;
+		color: var(--gold);
+		font-weight: 800;
+	}
+	.t2 {
+		font-size: 1.15rem;
+		font-weight: 900;
+		letter-spacing: -0.3px;
+		background: linear-gradient(90deg, #fff, #c8e6c9);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+		margin-top: 2px;
+	}
+
+	main {
+		flex: 1;
+		padding: 1rem;
+		padding-bottom: 6rem;
+		max-width: 720px;
+		width: 100%;
+		margin: 0 auto;
+	}
+
+	.loading {
+		text-align: center;
+		color: var(--muted);
+		padding: 3rem 0;
+	}
+	.loader-ball {
+		font-size: 3rem;
+		animation: spin-bounce 1.4s ease-in-out infinite;
+		display: inline-block;
+	}
+	@keyframes spin-bounce {
+		0%, 100% { transform: translateY(0) rotate(0deg); }
+		50% { transform: translateY(-20px) rotate(180deg); }
+	}
+
+	.bottom-nav {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background: rgba(10, 26, 46, 0.85);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		border-top: 1px solid var(--border);
+		display: flex;
+		justify-content: space-around;
+		padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom));
+		z-index: 10;
+		box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.4);
+	}
+	.bottom-nav a {
+		color: var(--muted);
+		text-decoration: none;
+		font-size: 0.7rem;
+		padding: 0.5rem 0.9rem;
+		border-radius: 14px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 2px;
+		transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+		min-width: 70px;
+		font-weight: 600;
+	}
+	.bottom-nav a .icon {
+		font-size: 1.4rem;
+		transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+	.bottom-nav a.active {
+		color: var(--gold);
+		background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(11, 107, 46, 0.25));
+	}
+	.bottom-nav a.active .icon {
+		transform: scale(1.2) translateY(-2px);
+	}
+	.bottom-nav a:not(.active):active .icon {
+		transform: scale(0.85);
+	}
+</style>
