@@ -80,6 +80,11 @@
 	}
 </script>
 
+<a class="scan-fab" href="/figus/escanear" in:scale={{ duration: 300, delay: 100, start: 0.7 }}>
+	<span class="fab-ico">📷</span>
+	<span>Escanear figu</span>
+</a>
+
 <div class="filters" in:fly={{ y: -10, duration: 300 }}>
 	<div class="search">
 		<span class="search-icon">🔍</span>
@@ -170,6 +175,25 @@
 </ul>
 
 <style>
+	.scan-fab {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.85rem 1rem;
+		background: linear-gradient(135deg, #fbbf24, #f59e0b);
+		color: #1a1a1a;
+		border-radius: 14px;
+		text-decoration: none;
+		font-weight: 800;
+		font-size: 0.95rem;
+		box-shadow: 0 8px 24px rgba(251, 191, 36, 0.35);
+		margin-bottom: 0.8rem;
+		transition: transform 0.15s;
+	}
+	.scan-fab:active { transform: scale(0.97); }
+	.fab-ico { font-size: 1.4rem; }
+
 	.filters {
 		display: flex;
 		flex-direction: column;
