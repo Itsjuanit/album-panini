@@ -61,7 +61,10 @@ export default async function handler(request: Request): Promise<Response> {
 		],
 		generationConfig: {
 			temperature: 0.1,
-			maxOutputTokens: 30
+			maxOutputTokens: 500,
+			thinkingConfig: {
+				thinkingBudget: 0
+			}
 		}
 	};
 
