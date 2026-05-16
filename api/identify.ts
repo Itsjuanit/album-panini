@@ -1,31 +1,20 @@
 const GEMINI_MODEL = 'gemini-flash-latest';
 
-const PROMPT = `Mirá esta figurita del álbum Panini FIFA World Cup 2026.
+const PROMPT = `Look at this Panini FIFA World Cup 2026 sticker image. Find the sticker code printed on it.
 
-OBJETIVO: leer el código de la figurita. Está en una pastilla NEGRA con texto blanco, generalmente arriba a la derecha del dorso.
+The code has format "XXX N" or "XXX NN":
+- XXX = three uppercase letters (country code like URU, ARG, BRA, FRA, ESP)
+- N or NN = a number from 0 to 26
+- Usually appears in a dark/black pill or label on the back of the sticker, top-right
 
-El código tiene DOS PARTES, ambas obligatorias:
-- 3 LETRAS = código FIFA del país (ARG, BRA, URU, MEX, USA, GER, ESP, FRA, POR, NED, BEL, ENG, CRO, JPN, KOR, MAR, AUS, COL, ITA, RUS, etc.)
-- 1 O 2 DÍGITOS = número del 0 al 26 (puede ser 0, 5, 11, 26)
+Examples on the sticker: "URU 6", "URU 7", "ARG 17", "BRA 23", "FRA 0"
 
-EJEMPLOS de códigos válidos en formato real (lo que verías en la figurita):
-- "URU 7"   -> respondé "URU-07"
-- "URU 14"  -> respondé "URU-14"
-- "ARG 0"   -> respondé "ARG-00"
-- "BRA 23"  -> respondé "BRA-23"
+YOUR RESPONSE FORMAT — ONE LINE, NOTHING ELSE:
+- If you read both letters and number: XXX-NN (zero-padded). Example: "URU 7" → URU-07
+- If you read only the 3 letters but the number is unreadable/blurry: XXX-?? . Example: URU-??
+- If you cannot read 3 letters either: UNKNOWN
 
-INSTRUCCIONES OBLIGATORIAS:
-1. Mirá con MUCHA atención el numerito al lado/abajo del código de país. Puede ser muy chico, de 1 solo dígito.
-2. Si ves SOLAMENTE las 3 letras pero no podés leer claramente el número, AÚN ASÍ respondé las 3 letras seguidas de "-?" (ej: "URU-?"). NO devuelvas UNKNOWN si al menos viste las 3 letras.
-3. NO confundas con: "PANINI", "FIFA", "2026", "INDUSTRIA ARGENTINA", número de fabricante de 5-6 dígitos como "005460", nombre del jugador, año de nacimiento, dorsal.
-4. NO pongas comillas, comillas simples ni espacios extra alrededor.
-
-FORMATO DE RESPUESTA:
-- Si leíste código + número: SOLO el código en formato XXX-NN (ej: URU-07)
-- Si leíste solo el país pero no el número: SOLO XXX-? (ej: URU-?)
-- Si no leíste ni siquiera 3 letras: UNKNOWN
-
-Respondé en UNA sola línea, sin más texto.`;
+Do not include quotes, explanation, or any other text. Just the code.`;
 
 interface GeminiResponse {
 	candidates?: Array<{
