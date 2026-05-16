@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { db, setStatus } from '$lib/db';
-	import { recognizeSticker, type OcrResult } from '$lib/ocr';
+	import { recognizeSticker } from '$lib/ocr';
+	import { identifyWithAI, type IdentifyResult } from '$lib/identify';
 	import { goto } from '$app/navigation';
 	import { fly, scale, fade } from 'svelte/transition';
 
@@ -8,7 +9,7 @@
 
 	let phase = $state<Phase>('idle');
 	let previewUrl = $state<string | undefined>();
-	let result = $state<OcrResult | undefined>();
+	let result = $state<IdentifyResult | undefined>();
 
 	async function onCapture(e: Event) {
 		const file = (e.target as HTMLInputElement).files?.[0];
@@ -17,14 +18,25 @@
 		previewUrl = URL.createObjectURL(file);
 		phase = 'processing';
 		try {
-			const stickers = await db.stickers.toArray();
-			const r = await recognizeSticker(file, stickers);
-			result = r;
-			phase = r.matches.length > 0 ? 'result' : 'no-match';
+			result = await identifyWithAI(file);
 		} catch (err) {
-			console.error(err);
-			phase = 'no-match';
+			console.error('AI identify failed, trying OCR fallback:', err);
+			try {
+				const stickers = await db.stickers.toArray();
+				const ocr = await recognizeSticker(file, stickers);
+				result = {
+					rawText: ocr.rawText,
+					matches: ocr.matches,
+					bestMatch: ocr.bestMatch,
+					confidence: ocr.confidence,
+					source: 'ocr'
+				};
+			} catch (err2) {
+				console.error(err2);
+				result = { rawText: String(err), matches: [], confidence: 'none', source: 'ocr' };
+			}
 		}
+		phase = (result?.matches.length ?? 0) > 0 ? 'result' : 'no-match';
 	}
 
 	async function pickMatch(stickerId: number, markOwned = true) {
@@ -48,7 +60,7 @@
 <div class="hero" in:fly={{ y: 15, duration: 300 }}>
 	<div class="ico">📷</div>
 	<h1>Escanear figurita</h1>
-	<p>Apuntá a la figu, sobre todo al número de abajo (ej: <code>A1-05</code> o <code>FWC042</code>)</p>
+	<p>Apuntá a la figu — la AI lee el código del país (ej: <code>ARG 17</code>) y la encuentra sola</p>
 </div>
 
 {#if phase === 'idle'}
