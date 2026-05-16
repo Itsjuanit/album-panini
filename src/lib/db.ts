@@ -17,6 +17,21 @@ export class AlbumDB extends Dexie {
 			trades: '++id, stickerId, date',
 			teams: 'name, group'
 		});
+		this.version(2)
+			.stores({
+				stickers: 'id, team, group, role',
+				states: 'id, status',
+				trades: '++id, stickerId, date',
+				teams: 'name, group'
+			})
+			.upgrade(async (tx) => {
+				await tx.table('stickers').clear();
+				await tx.table('states').clear();
+				await tx.table('teams').clear();
+				if (typeof localStorage !== 'undefined') {
+					localStorage.setItem('album-pending-cloud-wipe', '1');
+				}
+			});
 	}
 }
 

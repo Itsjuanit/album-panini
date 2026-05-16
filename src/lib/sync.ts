@@ -250,6 +250,25 @@ export async function pushAllLocalToCloud() {
 	}
 }
 
+export async function wipeCloudData(): Promise<void> {
+	const user = (await supabase.auth.getUser()).data.user;
+	if (!user) return;
+	await Promise.all([
+		supabase.from('sticker_states').delete().eq('user_id', user.id),
+		supabase.from('trades').delete().eq('user_id', user.id),
+		supabase.from('team_names').delete().eq('user_id', user.id),
+		supabase.from('player_names').delete().eq('user_id', user.id)
+	]);
+}
+
+export async function maybePendingCloudWipe(): Promise<boolean> {
+	if (typeof localStorage === 'undefined') return false;
+	if (!localStorage.getItem('album-pending-cloud-wipe')) return false;
+	await wipeCloudData();
+	localStorage.removeItem('album-pending-cloud-wipe');
+	return true;
+}
+
 export async function clearLocalUserData() {
 	suppressPush = true;
 	try {

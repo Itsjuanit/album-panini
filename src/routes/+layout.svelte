@@ -10,7 +10,8 @@
 		cloudHasData,
 		localHasMeaningfulData,
 		pushAllLocalToCloud,
-		clearLocalUserData
+		clearLocalUserData,
+		maybePendingCloudWipe
 	} from '$lib/sync';
 
 	let { children } = $props();
@@ -31,6 +32,8 @@
 			if (!isPublicRoute) goto('/login');
 			return;
 		}
+
+		await maybePendingCloudWipe();
 
 		const [hasCloud, hasLocal] = await Promise.all([
 			cloudHasData(),

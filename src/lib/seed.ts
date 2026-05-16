@@ -74,31 +74,11 @@ export function buildChecklist(): Sticker[] {
 			const slot = `${g}${t}`;
 			const teamName = TEAM_BY_SLOT[slot] ?? `Equipo ${slot}`;
 			const teamCode = CODE_BY_SLOT[slot] ?? slot;
-			list.push({
-				id: id++,
-				code: `${teamCode}-01`,
-				team: teamName,
-				group: g,
-				role: 'crest',
-				label: 'Escudo'
-			});
-			list.push({
-				id: id++,
-				code: `${teamCode}-02`,
-				team: teamName,
-				group: g,
-				role: 'team-photo',
-				label: 'Foto del equipo'
-			});
-			for (let p = 1; p <= 18; p++) {
-				list.push({
-					id: id++,
-					code: `${teamCode}-${String(p + 2).padStart(2, '0')}`,
-					team: teamName,
-					group: g,
-					role: 'player',
-					label: `Jugador ${p}`
-				});
+			for (let n = 0; n <= 26; n++) {
+				const code = `${teamCode}-${String(n).padStart(2, '0')}`;
+				const role: 'crest' | 'player' = n === 0 ? 'crest' : 'player';
+				const label = n === 0 ? 'Escudo' : `Figurita ${String(n).padStart(2, '0')}`;
+				list.push({ id: id++, code, team: teamName, group: g, role, label });
 			}
 		}
 	}
@@ -106,13 +86,16 @@ export function buildChecklist(): Sticker[] {
 	return list;
 }
 
+export const STICKERS_PER_TEAM = 27;
+export const INTRO_COUNT = 20;
+
 export function slotForId(id: number): string | null {
-	if (id <= 20) return null;
-	const teamIndex = Math.floor((id - 21) / 20);
+	if (id <= INTRO_COUNT) return null;
+	const teamIndex = Math.floor((id - INTRO_COUNT - 1) / STICKERS_PER_TEAM);
 	const groupIndex = Math.floor(teamIndex / 4);
 	const inGroup = (teamIndex % 4) + 1;
 	if (groupIndex >= GROUPS.length) return null;
 	return `${GROUPS[groupIndex]}${inGroup}`;
 }
 
-export const TOTAL_STICKERS = 980;
+export const TOTAL_STICKERS = INTRO_COUNT + 48 * STICKERS_PER_TEAM;
