@@ -9,6 +9,39 @@ export interface IdentifyResult {
 	source: 'ai' | 'ocr';
 }
 
+async function compressImage(file: Blob, maxDim = 1280, quality = 0.85): Promise<Blob> {
+	const url = URL.createObjectURL(file);
+	try {
+		const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+			const i = new Image();
+			i.onload = () => resolve(i);
+			i.onerror = reject;
+			i.src = url;
+		});
+
+		const ratio = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+		const w = Math.round(img.naturalWidth * ratio);
+		const h = Math.round(img.naturalHeight * ratio);
+
+		const canvas = document.createElement('canvas');
+		canvas.width = w;
+		canvas.height = h;
+		const ctx = canvas.getContext('2d');
+		if (!ctx) throw new Error('No canvas 2d');
+		ctx.drawImage(img, 0, 0, w, h);
+
+		return await new Promise<Blob>((resolve, reject) => {
+			canvas.toBlob(
+				(b) => (b ? resolve(b) : reject(new Error('toBlob falló'))),
+				'image/jpeg',
+				quality
+			);
+		});
+	} finally {
+		URL.revokeObjectURL(url);
+	}
+}
+
 async function fileToBase64(file: Blob): Promise<{ base64: string; mimeType: string }> {
 	return new Promise((resolve, reject) => {
 		const reader = new FileReader();
@@ -24,7 +57,13 @@ async function fileToBase64(file: Blob): Promise<{ base64: string; mimeType: str
 }
 
 export async function identifyWithAI(image: Blob): Promise<IdentifyResult> {
-	const { base64, mimeType } = await fileToBase64(image);
+	let toSend: Blob = image;
+	try {
+		toSend = await compressImage(image, 1280, 0.85);
+	} catch (e) {
+		console.warn('Compresión falló, mando original:', e);
+	}
+	const { base64, mimeType } = await fileToBase64(toSend);
 
 	const res = await fetch('/api/identify', {
 		method: 'POST',
