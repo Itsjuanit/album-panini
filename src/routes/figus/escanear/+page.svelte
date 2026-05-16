@@ -104,7 +104,7 @@
 		const cropW = Math.min(vw - cropX, finderRect.width * scaleX);
 		const cropH = Math.min(vh - cropY, finderRect.height * scaleY);
 
-		const padding = 0.15;
+		const padding = 0.05;
 		const padX = cropW * padding;
 		const padY = cropH * padding;
 		const finalX = Math.max(0, cropX - padX);
@@ -211,7 +211,7 @@
 	<div class="hero" in:fly={{ y: 15, duration: 300 }}>
 		<div class="ico">📷</div>
 		<h1>Escanear figurita <span class="ai-badge">🤖 AI</span></h1>
-		<p>Apuntá la cámara al <strong>código</strong> (la pastilla negra del dorso, ej: <code>URU 6</code>). Solo eso adentro del recuadro.</p>
+		<p>Encuadrá la <strong>figurita entera</strong> en el recuadro amarillo, con el código (pastilla negra) visible.</p>
 		<span class="build-info" title="Versión deployada">v: {__BUILD_INFO__}</span>
 	</div>
 {/if}
@@ -230,9 +230,9 @@
 	<div class="tips" in:fly={{ y: 10, duration: 300, delay: 100 }}>
 		<p class="t-title">Cómo funciona:</p>
 		<ul>
-			<li>🟨 Vas a ver un recuadro amarillo en la pantalla</li>
-			<li>📏 Acercá la pastilla del código <strong>adentro del recuadro</strong></li>
-			<li>🎯 Tocá el botón blanco para capturar SOLO esa zona</li>
+			<li>🟨 Recuadro amarillo con forma de figurita (alto)</li>
+			<li>🃏 Pone la figu adentro, que se vea bien el código arriba a la derecha</li>
+			<li>🎯 Tocá el botón blanco abajo para capturar</li>
 		</ul>
 	</div>
 {/if}
@@ -247,7 +247,8 @@
 				<div class="corner tr"></div>
 				<div class="corner bl"></div>
 				<div class="corner br"></div>
-				<span class="vf-hint">Pon el código adentro</span>
+				<div class="code-zone"><span>código acá</span></div>
+				<span class="vf-hint">Encuadrá toda la figurita</span>
 			</div>
 		</div>
 
@@ -520,10 +521,30 @@
 	}
 	.viewfinder {
 		position: relative;
-		width: min(85%, 380px);
-		aspect-ratio: 3 / 1;
-		max-width: 90%;
+		width: min(75%, 360px);
+		aspect-ratio: 5 / 7;
+		max-height: 65vh;
 		animation: pulse-yellow 2.4s ease-in-out infinite;
+	}
+	.code-zone {
+		position: absolute;
+		top: 6%;
+		right: 6%;
+		width: 28%;
+		height: 9%;
+		border: 2px dashed var(--good);
+		border-radius: 6px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.code-zone span {
+		font-size: 0.55rem;
+		color: var(--good);
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 	}
 	@keyframes pulse-yellow {
 		0%, 100% { filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.5)); }
