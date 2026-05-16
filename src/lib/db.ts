@@ -1,6 +1,7 @@
 import Dexie, { type Table } from 'dexie';
 import type { Sticker, StickerState, TradeLog, Team } from './types';
 import { buildChecklist, TEAM_BY_SLOT } from './seed';
+import { pushState, pushTrade, pushTeamRename, pushPlayerLabel } from './sync';
 
 export class AlbumDB extends Dexie {
 	stickers!: Table<Sticker, number>;
@@ -75,11 +76,13 @@ async function syncTeamNamesFromSeed() {
 
 export async function setStatus(id: number, status: StickerState['status']) {
 	await db.states.update(id, { status, updatedAt: Date.now() });
+	pushState(id).catch(console.error);
 }
 
 export async function setDuplicates(id: number, duplicates: number) {
 	const status = duplicates > 0 ? 'duplicate' : 'owned';
 	await db.states.update(id, { duplicates: Math.max(0, duplicates), status, updatedAt: Date.now() });
+	pushState(id).catch(console.error);
 }
 
 export async function setPhoto(id: number, blob: Blob | undefined) {
@@ -88,15 +91,21 @@ export async function setPhoto(id: number, blob: Blob | undefined) {
 
 export async function setNotes(id: number, notes: string) {
 	await db.states.update(id, { notes, updatedAt: Date.now() });
+	pushState(id).catch(console.error);
 }
 
 export async function setStickerLabel(id: number, label: string) {
 	await db.stickers.update(id, { label });
+	const s = await db.stickers.get(id);
+	if (s?.role === 'player') pushPlayerLabel(id, label).catch(console.error);
 }
 
 export async function renameTeam(oldName: string, newName: string) {
 	if (oldName === newName) return;
+	let slot: string | undefined;
 	await db.transaction('rw', db.stickers, db.teams, async () => {
+		const someSticker = await db.stickers.where('team').equals(oldName).first();
+		slot = someSticker?.code.split('-')[0];
 		await db.stickers.where('team').equals(oldName).modify({ team: newName });
 		const t = await db.teams.get(oldName);
 		if (t) {
@@ -104,6 +113,24 @@ export async function renameTeam(oldName: string, newName: string) {
 			await db.teams.put({ ...t, name: newName, customName: newName });
 		}
 	});
+	if (slot) pushTeamRename(slot, newName).catch(console.error);
+}
+
+export async function addTrade(
+	stickerId: number,
+	kind: 'in' | 'out',
+	withWhom: string,
+	notes?: string
+) {
+	const localId = await db.trades.add({
+		stickerId,
+		kind,
+		withWhom,
+		notes,
+		date: Date.now()
+	});
+	pushTrade(stickerId, kind, withWhom, notes).catch(console.error);
+	return localId;
 }
 
 export async function exportAll() {

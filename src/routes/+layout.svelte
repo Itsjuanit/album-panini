@@ -2,15 +2,77 @@
 	import { ensureSeeded } from '$lib/db';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import { fade, fly } from 'svelte/transition';
+	import { auth } from '$lib/auth.svelte';
+	import {
+		pullFromCloud,
+		cloudHasData,
+		localHasMeaningfulData,
+		pushAllLocalToCloud,
+		clearLocalUserData
+	} from '$lib/sync';
 
 	let { children } = $props();
 	let ready = $state(false);
+	let migrationPrompt = $state<null | 'asking' | 'uploading' | 'done'>(null);
+	let migrationKind = $state<'first-login' | null>(null);
+
+	const isPublicRoute = $derived(
+		page.url.pathname.startsWith('/login') || page.url.pathname.startsWith('/auth/')
+	);
 
 	onMount(async () => {
+		await auth.init();
 		await ensureSeeded();
+
+		if (!auth.user) {
+			ready = true;
+			if (!isPublicRoute) goto('/login');
+			return;
+		}
+
+		const [hasCloud, hasLocal] = await Promise.all([
+			cloudHasData(),
+			localHasMeaningfulData()
+		]);
+
+		if (!hasCloud && hasLocal) {
+			migrationPrompt = 'asking';
+			migrationKind = 'first-login';
+			ready = true;
+			return;
+		}
+
+		if (hasCloud) {
+			await pullFromCloud();
+		}
+
 		ready = true;
 	});
+
+	async function migrate(upload: boolean) {
+		migrationPrompt = 'uploading';
+		try {
+			if (upload) {
+				await pushAllLocalToCloud();
+			} else {
+				await clearLocalUserData();
+			}
+			migrationPrompt = 'done';
+			setTimeout(() => (migrationPrompt = null), 600);
+		} catch (e) {
+			console.error(e);
+			migrationPrompt = null;
+		}
+	}
+
+	async function logout() {
+		if (!confirm('¿Cerrar sesión? Las fotos locales quedan en este celu.')) return;
+		await auth.signOut();
+		await clearLocalUserData();
+		goto('/login');
+	}
 </script>
 
 <svelte:head>
@@ -40,22 +102,44 @@
 					<span class="t2">Mundial 2026</span>
 				</div>
 			</div>
+			{#if auth.user && !isPublicRoute}
+				<button class="user-btn" onclick={logout} title="Cerrar sesión">
+					<span class="initial">{(auth.user.email ?? '?')[0].toUpperCase()}</span>
+				</button>
+			{/if}
 		</div>
 	</header>
 
 	<main>
-		{#if ready}
-			<div in:fade={{ duration: 250 }}>
-				{@render children()}
-			</div>
-		{:else}
+		{#if !ready}
 			<div class="loading" in:fade>
 				<div class="loader-ball" aria-hidden="true">⚽</div>
 				<p>Armando el álbum…</p>
 			</div>
+		{:else if migrationPrompt === 'asking'}
+			<div class="migrate-card" in:fly={{ y: 15, duration: 300 }}>
+				<div class="m-ico">📤</div>
+				<h2>Tu primera vez en la nube</h2>
+				<p>Detecté que ya tenías figus marcadas en este celu. ¿Subirlas a tu cuenta para que las puedas usar en otros dispositivos?</p>
+				<div class="m-actions">
+					<button class="primary" onclick={() => migrate(true)}>Sí, subir mis figus</button>
+					<button class="ghost" onclick={() => migrate(false)}>No, empezar limpio</button>
+				</div>
+				<small>Las fotos quedan locales en este celu en ambos casos.</small>
+			</div>
+		{:else if migrationPrompt === 'uploading'}
+			<div class="loading" in:fade>
+				<div class="loader-ball">☁️</div>
+				<p>Subiendo a la nube…</p>
+			</div>
+		{:else}
+			<div in:fade={{ duration: 250 }}>
+				{@render children()}
+			</div>
 		{/if}
 	</main>
 
+	{#if auth.user && !isPublicRoute}
 	<nav class="bottom-nav">
 		<a href="/" class:active={page.url.pathname === '/'}>
 			<span class="icon">📊</span>
@@ -74,6 +158,7 @@
 			<span class="lbl">Canjes</span>
 		</a>
 	</nav>
+	{/if}
 </div>
 
 <style>
@@ -174,6 +259,66 @@
 		align-items: center;
 		justify-content: space-between;
 	}
+	.user-btn {
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		border: 2px solid var(--gold);
+		background: linear-gradient(135deg, #fbbf24, #f59e0b);
+		color: #1a1a1a;
+		font-weight: 900;
+		cursor: pointer;
+		font-family: inherit;
+		font-size: 0.95rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: transform 0.15s;
+	}
+	.user-btn:active { transform: scale(0.92); }
+	.initial { line-height: 1; }
+
+	.migrate-card {
+		background: var(--card);
+		border: 1px solid var(--gold);
+		border-radius: 18px;
+		padding: 1.5rem;
+		text-align: center;
+		max-width: 420px;
+		margin: 2rem auto 0;
+		box-shadow: 0 20px 40px rgba(251, 191, 36, 0.15);
+	}
+	.m-ico { font-size: 3rem; margin-bottom: 0.4rem; }
+	.migrate-card h2 { margin: 0 0 0.7rem; font-size: 1.3rem; font-weight: 900; }
+	.migrate-card p { color: var(--muted); font-size: 0.92rem; margin: 0 0 1rem; }
+	.m-actions {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		margin-bottom: 0.6rem;
+	}
+	.m-actions .primary {
+		padding: 0.85rem;
+		border: none;
+		border-radius: 12px;
+		background: linear-gradient(135deg, #22c55e, #16a34a);
+		color: white;
+		font-weight: 800;
+		cursor: pointer;
+		font-family: inherit;
+		font-size: 0.95rem;
+	}
+	.m-actions .ghost {
+		padding: 0.7rem;
+		border: 1px solid var(--border);
+		border-radius: 12px;
+		background: transparent;
+		color: var(--muted);
+		cursor: pointer;
+		font-family: inherit;
+		font-size: 0.9rem;
+	}
+	.migrate-card small { color: var(--muted); font-size: 0.78rem; }
 	.logo {
 		display: flex;
 		align-items: center;

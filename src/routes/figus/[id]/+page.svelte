@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { db, setStatus, setDuplicates, setPhoto, setNotes, renameTeam } from '$lib/db';
+	import { db, setStatus, setDuplicates, setPhoto, setNotes, renameTeam, addTrade } from '$lib/db';
 	import { liveQuery } from 'dexie';
 	import { fly, scale, fade } from 'svelte/transition';
 
@@ -77,7 +77,7 @@
 	async function logTrade(kind: 'in' | 'out') {
 		const withWhom = prompt(kind === 'in' ? '¿De quién la conseguiste?' : '¿A quién se la diste?');
 		if (!withWhom) return;
-		await db.trades.add({ stickerId: id, kind, withWhom, date: Date.now() });
+		await addTrade(id, kind, withWhom);
 		if (kind === 'in') {
 			const st = await db.states.get(id);
 			if (st?.status === 'missing') await setStatus(id, 'owned');
