@@ -498,26 +498,32 @@
 	.camera-view {
 		position: fixed;
 		inset: 0;
+		height: 100dvh;
 		background: #000;
-		z-index: 50;
-		display: flex;
-		flex-direction: column;
+		z-index: 100;
 		overflow: hidden;
 	}
 	.camera-view video {
-		flex: 1;
+		position: absolute;
+		inset: 0;
 		width: 100%;
+		height: 100%;
 		object-fit: cover;
 		background: #000;
+		z-index: 1;
 	}
 	.viewfinder-frame {
 		position: absolute;
-		inset: 0;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 160px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		pointer-events: none;
 		padding: 1rem;
+		z-index: 2;
 	}
 	.viewfinder {
 		position: relative;
@@ -588,13 +594,18 @@
 	}
 
 	.camera-controls {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
 		display: flex;
 		align-items: center;
 		justify-content: space-around;
-		padding: 1.2rem 1rem calc(1.2rem + env(safe-area-inset-bottom));
-		background: rgba(0, 0, 0, 0.6);
-		backdrop-filter: blur(10px);
-		-webkit-backdrop-filter: blur(10px);
+		padding: 1.4rem 1.2rem calc(1.4rem + env(safe-area-inset-bottom));
+		background: linear-gradient(to top, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.4));
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		z-index: 3;
 	}
 	.circle {
 		width: 48px;
