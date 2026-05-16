@@ -23,35 +23,61 @@
 		page.url.pathname.startsWith('/login') || page.url.pathname.startsWith('/auth/')
 	);
 
-	onMount(async () => {
-		await auth.init();
-		await ensureSeeded();
+	let bootError = $state<string | undefined>();
 
-		if (!auth.user) {
-			ready = true;
-			if (!isPublicRoute) goto('/login');
-			return;
-		}
+	onMount(() => {
+		const safety = setTimeout(() => {
+			if (!ready) {
+				bootError = 'Inicio tardando demasiado. Mostrando app de todos modos.';
+				ready = true;
+			}
+		}, 12000);
 
-		await maybePendingCloudWipe();
+		(async () => {
+			try {
+				await auth.init();
+				await ensureSeeded();
 
-		const [hasCloud, hasLocal] = await Promise.all([
-			cloudHasData(),
-			localHasMeaningfulData()
-		]);
+				if (!auth.user) {
+					if (!isPublicRoute) goto('/login');
+					return;
+				}
 
-		if (!hasCloud && hasLocal) {
-			migrationPrompt = 'asking';
-			migrationKind = 'first-login';
-			ready = true;
-			return;
-		}
+				try {
+					await maybePendingCloudWipe();
+				} catch (e) {
+					console.error('Cloud wipe falló:', e);
+				}
 
-		if (hasCloud) {
-			await pullFromCloud();
-		}
+				const [hasCloud, hasLocal] = await Promise.all([
+					cloudHasData().catch((e) => {
+						console.error('cloudHasData falló:', e);
+						return false;
+					}),
+					localHasMeaningfulData().catch(() => false)
+				]);
 
-		ready = true;
+				if (!hasCloud && hasLocal) {
+					migrationPrompt = 'asking';
+					migrationKind = 'first-login';
+					return;
+				}
+
+				if (hasCloud) {
+					try {
+						await pullFromCloud();
+					} catch (e) {
+						console.error('pullFromCloud falló:', e);
+					}
+				}
+			} catch (e) {
+				console.error('onMount falló:', e);
+				bootError = (e as Error)?.message ?? String(e);
+			} finally {
+				clearTimeout(safety);
+				ready = true;
+			}
+		})();
 	});
 
 	async function migrate(upload: boolean) {
@@ -118,6 +144,7 @@
 			<div class="loading" in:fade>
 				<div class="loader-ball" aria-hidden="true">⚽</div>
 				<p>Armando el álbum…</p>
+				<small class="boot-hint">Si tarda más de 10s, recargá con Ctrl+Shift+R</small>
 			</div>
 		{:else if migrationPrompt === 'asking'}
 			<div class="migrate-card" in:fly={{ y: 15, duration: 300 }}>
@@ -136,6 +163,12 @@
 				<p>Subiendo a la nube…</p>
 			</div>
 		{:else}
+			{#if bootError}
+				<div class="boot-err" in:fly={{ y: -10, duration: 200 }}>
+					<strong>⚠️</strong> {bootError}
+					<button onclick={() => (bootError = undefined)}>✕</button>
+				</div>
+			{/if}
 			<div in:fade={{ duration: 250 }}>
 				{@render children()}
 			</div>
@@ -378,6 +411,32 @@
 		font-size: 3rem;
 		animation: spin-bounce 1.4s ease-in-out infinite;
 		display: inline-block;
+	}
+	.boot-hint {
+		display: block;
+		margin-top: 0.7rem;
+		color: var(--muted);
+		font-size: 0.78rem;
+		opacity: 0.7;
+	}
+	.boot-err {
+		background: rgba(239, 68, 68, 0.15);
+		border: 1px solid var(--bad);
+		border-radius: 10px;
+		padding: 0.6rem 0.8rem;
+		margin-bottom: 0.8rem;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.85rem;
+	}
+	.boot-err button {
+		margin-left: auto;
+		background: transparent;
+		border: none;
+		color: var(--text);
+		cursor: pointer;
+		font-size: 1rem;
 	}
 	@keyframes spin-bounce {
 		0%, 100% { transform: translateY(0) rotate(0deg); }
