@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import type { Sticker, StickerState, TradeLog, Team } from './types';
-import { buildChecklist, TEAM_BY_SLOT } from './seed';
+import { buildChecklist, TEAM_BY_SLOT, CODE_BY_SLOT, slotForId } from './seed';
 import { pushState, pushTrade, pushTeamRename, pushPlayerLabel } from './sync';
 
 export class AlbumDB extends Dexie {
@@ -47,8 +47,29 @@ export async function ensureSeeded() {
 		await db.teams.bulkAdd([...teamNames.values()]);
 	} else {
 		await syncTeamNamesFromSeed();
+		await migrateStickerCodesToFifa();
 	}
 	seeded = true;
+}
+
+async function migrateStickerCodesToFifa() {
+	const sample = await db.stickers.where('id').between(21, 40).first();
+	if (!sample) return;
+	if (/^[A-Z]{3}-\d{2}$/.test(sample.code)) return;
+
+	await db.transaction('rw', db.stickers, async () => {
+		const stickers = await db.stickers.toArray();
+		for (const s of stickers) {
+			if (s.role === 'intro') continue;
+			if (/^[A-Z]{3}-\d{2}$/.test(s.code)) continue;
+			const slot = slotForId(s.id);
+			if (!slot) continue;
+			const code3 = CODE_BY_SLOT[slot];
+			if (!code3) continue;
+			const numPart = s.code.split('-')[1] ?? String(((s.id - 21) % 20) + 1).padStart(2, '0');
+			await db.stickers.update(s.id, { code: `${code3}-${numPart}` });
+		}
+	});
 }
 
 async function syncTeamNamesFromSeed() {

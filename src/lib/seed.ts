@@ -17,6 +17,21 @@ export const TEAM_BY_SLOT: Record<string, string> = {
 	L1: 'Inglaterra',     L2: 'Croacia',           L3: 'Ghana',           L4: 'Panamá'
 };
 
+export const CODE_BY_SLOT: Record<string, string> = {
+	A1: 'MEX', A2: 'RSA', A3: 'KOR', A4: 'CZE',
+	B1: 'CAN', B2: 'BIH', B3: 'QAT', B4: 'SUI',
+	C1: 'BRA', C2: 'MAR', C3: 'HAI', C4: 'SCO',
+	D1: 'USA', D2: 'PAR', D3: 'AUS', D4: 'TUR',
+	E1: 'GER', E2: 'CUW', E3: 'CIV', E4: 'ECU',
+	F1: 'NED', F2: 'JPN', F3: 'SWE', F4: 'TUN',
+	G1: 'BEL', G2: 'EGY', G3: 'IRN', G4: 'NZL',
+	H1: 'ESP', H2: 'CPV', H3: 'KSA', H4: 'URU',
+	I1: 'FRA', I2: 'SEN', I3: 'IRQ', I4: 'NOR',
+	J1: 'ARG', J2: 'ALG', J3: 'AUT', J4: 'JOR',
+	K1: 'POR', K2: 'COD', K3: 'UZB', K4: 'COL',
+	L1: 'ENG', L2: 'CRO', L3: 'GHA', L4: 'PAN'
+};
+
 export function buildChecklist(): Sticker[] {
 	const list: Sticker[] = [];
 	let id = 1;
@@ -58,9 +73,10 @@ export function buildChecklist(): Sticker[] {
 		for (let t = 1; t <= 4; t++) {
 			const slot = `${g}${t}`;
 			const teamName = TEAM_BY_SLOT[slot] ?? `Equipo ${slot}`;
+			const teamCode = CODE_BY_SLOT[slot] ?? slot;
 			list.push({
 				id: id++,
-				code: `${slot}-01`,
+				code: `${teamCode}-01`,
 				team: teamName,
 				group: g,
 				role: 'crest',
@@ -68,7 +84,7 @@ export function buildChecklist(): Sticker[] {
 			});
 			list.push({
 				id: id++,
-				code: `${slot}-02`,
+				code: `${teamCode}-02`,
 				team: teamName,
 				group: g,
 				role: 'team-photo',
@@ -77,7 +93,7 @@ export function buildChecklist(): Sticker[] {
 			for (let p = 1; p <= 18; p++) {
 				list.push({
 					id: id++,
-					code: `${slot}-${String(p + 2).padStart(2, '0')}`,
+					code: `${teamCode}-${String(p + 2).padStart(2, '0')}`,
 					team: teamName,
 					group: g,
 					role: 'player',
@@ -88,6 +104,15 @@ export function buildChecklist(): Sticker[] {
 	}
 
 	return list;
+}
+
+export function slotForId(id: number): string | null {
+	if (id <= 20) return null;
+	const teamIndex = Math.floor((id - 21) / 20);
+	const groupIndex = Math.floor(teamIndex / 4);
+	const inGroup = (teamIndex % 4) + 1;
+	if (groupIndex >= GROUPS.length) return null;
+	return `${GROUPS[groupIndex]}${inGroup}`;
 }
 
 export const TOTAL_STICKERS = 980;

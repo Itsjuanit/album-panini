@@ -8,8 +8,8 @@ async function getWorker() {
 			const { createWorker } = await import('tesseract.js');
 			const w = await createWorker('eng');
 			await w.setParameters({
-				tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-',
-				tessedit_pageseg_mode: '7' as any
+				tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789- ',
+				tessedit_pageseg_mode: '6' as any
 			});
 			return w;
 		})();
@@ -25,28 +25,34 @@ export interface OcrResult {
 	confidence: 'high' | 'low' | 'none';
 }
 
-const CODE_PATTERNS = [
-	/\b([A-L][1-4])[-\s]?(\d{1,2})\b/g,
-	/\bFWC[-\s]?(\d{2,3})\b/gi
-];
+const COUNTRY_PATTERN = /\b([A-Z]{3})[\s-]?(\d{1,3})\b/g;
+const FWC_PATTERN = /\bFWC[-\s]?(\d{1,3})\b/g;
+const SLOT_PATTERN = /\b([A-L][1-4])[-\s]?(\d{1,2})\b/g;
 
 function extractCodes(text: string): string[] {
 	const found = new Set<string>();
 	const cleaned = text.toUpperCase().replace(/[^A-Z0-9\s-]/g, ' ');
 
-	for (const re of CODE_PATTERNS) {
-		const r = new RegExp(re.source, re.flags);
-		let m;
-		while ((m = r.exec(cleaned)) !== null) {
-			if (m[0].startsWith('FWC')) {
-				const n = m[1].padStart(3, '0');
-				found.add(`FWC${n}`);
-			} else {
-				const num = m[2].padStart(2, '0');
-				found.add(`${m[1]}-${num}`);
-			}
-		}
+	let m: RegExpExecArray | null;
+	const fwc = new RegExp(FWC_PATTERN.source, 'g');
+	while ((m = fwc.exec(cleaned)) !== null) {
+		found.add(`FWC${m[1].padStart(3, '0')}`);
 	}
+
+	const country = new RegExp(COUNTRY_PATTERN.source, 'g');
+	while ((m = country.exec(cleaned)) !== null) {
+		const code = m[1];
+		if (code === 'FWC') continue;
+		const num = m[2].padStart(2, '0');
+		found.add(`${code}-${num}`);
+	}
+
+	const slot = new RegExp(SLOT_PATTERN.source, 'g');
+	while ((m = slot.exec(cleaned)) !== null) {
+		const num = m[2].padStart(2, '0');
+		found.add(`${m[1]}-${num}`);
+	}
+
 	return [...found];
 }
 
