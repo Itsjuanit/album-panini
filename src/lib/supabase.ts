@@ -6,6 +6,6 @@ export const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_K
 		persistSession: true,
 		autoRefreshToken: true,
 		detectSessionInUrl: true,
-		flowType: 'pkce'
+		flowType: 'implicit'
 	}
 });

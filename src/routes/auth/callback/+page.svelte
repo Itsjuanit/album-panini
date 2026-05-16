@@ -8,17 +8,28 @@
 	let errMsg = $state<string | undefined>();
 
 	onMount(async () => {
-		const params = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.search);
-		const code = new URLSearchParams(location.search).get('code');
-
 		try {
-			if (code) {
-				const { error } = await supabase.auth.exchangeCodeForSession(code);
-				if (error) throw error;
-			} else {
-				const { data, error } = await supabase.auth.getSession();
-				if (error || !data.session) throw error ?? new Error('Sesión no encontrada');
+			let session = (await supabase.auth.getSession()).data.session;
+
+			if (!session) {
+				session = await new Promise((resolve) => {
+					const timeout = setTimeout(() => resolve(null), 5000);
+					const { data } = supabase.auth.onAuthStateChange((_, s) => {
+						if (s) {
+							clearTimeout(timeout);
+							data.subscription.unsubscribe();
+							resolve(s);
+						}
+					});
+				});
 			}
+
+			if (!session) {
+				const hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
+				const errDesc = hashParams.get('error_description') || hashParams.get('error');
+				throw new Error(errDesc || 'No se pudo iniciar sesión. Pedí un link nuevo.');
+			}
+
 			await auth.init();
 			goto('/?welcome=1', { replaceState: true });
 		} catch (e: unknown) {
