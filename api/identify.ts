@@ -65,7 +65,11 @@ export default async function handler(request: Request): Promise<Response> {
 		}
 	};
 
+	const imgBytes = Math.round((imageBase64.length * 3) / 4);
+	console.log(`[identify] imageBytes=${imgBytes} mime=${mimeType}`);
+
 	let gem: GeminiResponse;
+	const t0 = Date.now();
 	try {
 		const res = await fetch(
 			`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
@@ -79,14 +83,21 @@ export default async function handler(request: Request): Promise<Response> {
 			}
 		);
 		gem = await res.json();
+		console.log(`[identify] gemini status=${res.status} ms=${Date.now() - t0}`);
 		if (!res.ok) {
+			console.error('[identify] gemini error:', JSON.stringify(gem));
 			return jsonResponse({ error: gem.error?.message ?? `Gemini ${res.status}` }, 502);
 		}
 	} catch (e) {
+		console.error('[identify] fetch threw:', e);
 		return jsonResponse({ error: 'Error llamando a Gemini' }, 502);
 	}
 
 	const text = gem.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
+	console.log(`[identify] gemini text="${text}"`);
+	if (!text) {
+		console.error('[identify] empty text from gemini. Full response:', JSON.stringify(gem).slice(0, 500));
+	}
 	const upper = text.toUpperCase();
 
 	if (/^UNKNOWN/i.test(text)) {

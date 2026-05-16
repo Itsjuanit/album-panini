@@ -177,10 +177,13 @@
 		{/if}
 		<div class="big-icon">😕</div>
 		<h2>No pude leer el código</h2>
-		{#if result?.rawText}
-			<p class="hint">Lo que llegué a leer fue ({result.source === 'ai' ? 'AI' : 'OCR'}):</p>
-			<pre class="raw">{result.rawText.trim() || '(nada)'}</pre>
-		{/if}
+		<div class="debug-box">
+			<div class="debug-label">📡 {result?.source === 'ai' ? 'Gemini' : 'OCR'} respondió:</div>
+			<div class="debug-text">{result?.rawText?.trim() || '(VACÍO — la AI no devolvió nada)'}</div>
+			<button class="copy-btn" onclick={() => navigator.clipboard?.writeText(result?.rawText ?? '')}>
+				📋 Copiar
+			</button>
+		</div>
 
 		<div class="manual-entry">
 			<p class="hint">Escribilo a mano:</p>
@@ -474,6 +477,45 @@
 		max-height: 120px;
 	}
 	.no-match-card .hint { color: var(--muted); margin: 0.5rem 0 0.3rem; font-size: 0.85rem; }
+
+	.debug-box {
+		background: rgba(251, 191, 36, 0.12);
+		border: 2px solid var(--gold);
+		border-radius: 12px;
+		padding: 0.9rem;
+		margin: 1rem 0;
+		text-align: left;
+	}
+	.debug-label {
+		font-size: 0.8rem;
+		color: var(--gold);
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 1px;
+		margin-bottom: 0.4rem;
+	}
+	.debug-text {
+		background: var(--card-solid);
+		padding: 0.7rem;
+		border-radius: 8px;
+		color: var(--text);
+		font-family: ui-monospace, monospace;
+		font-size: 1rem;
+		word-break: break-word;
+		min-height: 1.5rem;
+		border: 1px solid var(--border);
+	}
+	.copy-btn {
+		background: transparent;
+		border: 1px solid var(--gold);
+		color: var(--gold);
+		padding: 0.4rem 0.8rem;
+		border-radius: 8px;
+		font-size: 0.85rem;
+		margin-top: 0.5rem;
+		cursor: pointer;
+		font-family: inherit;
+	}
 
 	.manual-entry {
 		background: var(--card-solid);
