@@ -99,18 +99,18 @@
 		const scaleX = vw / displayedW;
 		const scaleY = vh / displayedH;
 
-		const cropX = Math.max(0, finderXInVideo * scaleX);
-		const cropY = Math.max(0, finderYInVideo * scaleY);
-		const cropW = Math.min(vw - cropX, finderRect.width * scaleX);
-		const cropH = Math.min(vh - cropY, finderRect.height * scaleY);
+		const baseX = finderXInVideo * scaleX;
+		const baseY = finderYInVideo * scaleY;
+		const baseW = finderRect.width * scaleX;
+		const baseH = finderRect.height * scaleY;
 
-		const padding = 0.05;
-		const padX = cropW * padding;
-		const padY = cropH * padding;
-		const finalX = Math.max(0, cropX - padX);
-		const finalY = Math.max(0, cropY - padY);
-		const finalW = Math.min(vw - finalX, cropW + padX * 2);
-		const finalH = Math.min(vh - finalY, cropH + padY * 2);
+		const padding = 0.4;
+		const padX = baseW * padding;
+		const padY = baseH * padding;
+		const finalX = Math.max(0, baseX - padX);
+		const finalY = Math.max(0, baseY - padY);
+		const finalW = Math.min(vw - finalX, baseW + padX * 2);
+		const finalH = Math.min(vh - finalY, baseH + padY * 2);
 
 		const canvas = document.createElement('canvas');
 		canvas.width = finalW;
@@ -248,7 +248,7 @@
 				<div class="corner bl"></div>
 				<div class="corner br"></div>
 				<div class="code-zone"><span>código acá</span></div>
-				<span class="vf-hint">Encuadrá toda la figurita</span>
+				<span class="vf-hint">Encuadrá la figurita (no hace falta perfecto)</span>
 			</div>
 		</div>
 
