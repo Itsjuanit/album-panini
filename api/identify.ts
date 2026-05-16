@@ -1,29 +1,31 @@
 const GEMINI_MODEL = 'gemini-flash-latest';
 
-const PROMPT = `Estás viendo una figurita del álbum Panini FIFA World Cup 2026.
+const PROMPT = `Mirá esta figurita del álbum Panini FIFA World Cup 2026.
 
-Tu ÚNICA tarea: encontrar el código identificador con formato "XXX N" o "XXX NN" donde:
-- XXX = código FIFA de 3 letras del país (ARG, BRA, URU, MEX, USA, GER, ESP, FRA, POR, NED, BEL, ENG, CRO, JPN, KOR, MAR, AUS, COL, etc.)
-- N o NN = número del 1 al 20
+OBJETIVO: leer el código de la figurita. Está en una pastilla NEGRA con texto blanco, generalmente arriba a la derecha del dorso.
 
-DÓNDE BUSCAR (en orden de prioridad):
-1. DORSO de la figurita: hay una pastilla/badge NEGRA arriba a la DERECHA con texto blanco. Ej: "URU 6", "ARG 17", "BRA 11". ESTE ES EL LUGAR PRINCIPAL.
-2. FRENTE de la figurita: borde inferior, texto chico
+El código tiene DOS PARTES, ambas obligatorias:
+- 3 LETRAS = código FIFA del país (ARG, BRA, URU, MEX, USA, GER, ESP, FRA, POR, NED, BEL, ENG, CRO, JPN, KOR, MAR, AUS, COL, ITA, RUS, etc.)
+- 1 O 2 DÍGITOS = número del 0 al 26 (puede ser 0, 5, 11, 26)
 
-IGNORÁ COMPLETAMENTE (no son el código):
-- "FIFA WORLD CUP 2026" (título)
-- "PANINI" / "paninigroup" (marca)
-- "OFFICIAL LICENSED PRODUCT"
-- "INDUSTRIA ARGENTINA" / "MADE IN..." (lugar de fabricación — NO es código de país)
-- Número de fabricante (5-6 dígitos como "005460")
-- "Esta figurita es parte..." (legal)
-- Nombre del jugador
-- Año, dorsal, fecha de nacimiento
+EJEMPLOS de códigos válidos en formato real (lo que verías en la figurita):
+- "URU 7"   -> respondé "URU-07"
+- "URU 14"  -> respondé "URU-14"
+- "ARG 0"   -> respondé "ARG-00"
+- "BRA 23"  -> respondé "BRA-23"
 
-Si ves la pastilla negra arriba a la derecha con "XXX N" o "XXX NN", ESE es el código.
+INSTRUCCIONES OBLIGATORIAS:
+1. Mirá con MUCHA atención el numerito al lado/abajo del código de país. Puede ser muy chico, de 1 solo dígito.
+2. Si ves SOLAMENTE las 3 letras pero no podés leer claramente el número, AÚN ASÍ respondé las 3 letras seguidas de "-?" (ej: "URU-?"). NO devuelvas UNKNOWN si al menos viste las 3 letras.
+3. NO confundas con: "PANINI", "FIFA", "2026", "INDUSTRIA ARGENTINA", número de fabricante de 5-6 dígitos como "005460", nombre del jugador, año de nacimiento, dorsal.
+4. NO pongas comillas, comillas simples ni espacios extra alrededor.
 
-Respondé EXACTAMENTE con el código en formato CODE-NUMBER, ej: URU-06, ARG-17, BRA-05. Sin comillas, sin texto extra, sin explicación.
-Si genuinamente no encontrás un patrón XXX+número, respondé: UNKNOWN`;
+FORMATO DE RESPUESTA:
+- Si leíste código + número: SOLO el código en formato XXX-NN (ej: URU-07)
+- Si leíste solo el país pero no el número: SOLO XXX-? (ej: URU-?)
+- Si no leíste ni siquiera 3 letras: UNKNOWN
+
+Respondé en UNA sola línea, sin más texto.`;
 
 interface GeminiResponse {
 	candidates?: Array<{
@@ -96,14 +98,29 @@ export default async function handler(request: Request): Promise<Response> {
 	}
 
 	const text = gem.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
-	const match = text.toUpperCase().match(/\b([A-Z]{3})[-\s]?(\d{1,3})\b/);
+	const upper = text.toUpperCase();
 
-	if (!match || /UNKNOWN/i.test(text)) {
-		return jsonResponse({ raw: text, code: null });
+	if (/^UNKNOWN/i.test(text)) {
+		return jsonResponse({ raw: text, code: null, country: null });
 	}
 
-	const code = `${match[1]}-${match[2].padStart(2, '0')}`;
-	return jsonResponse({ raw: text, code });
+	const fullMatch = upper.match(/\b([A-Z]{3})[-\s]?(\d{1,3})\b/);
+	if (fullMatch && fullMatch[1] !== 'FWC') {
+		const code = `${fullMatch[1]}-${fullMatch[2].padStart(2, '0')}`;
+		return jsonResponse({ raw: text, code, country: fullMatch[1] });
+	}
+
+	const fwcMatch = upper.match(/\bFWC[-\s]?(\d{1,3})\b/);
+	if (fwcMatch) {
+		return jsonResponse({ raw: text, code: `FWC${fwcMatch[1].padStart(3, '0')}`, country: null });
+	}
+
+	const countryOnly = upper.match(/\b([A-Z]{3})\b[-\s]*\??/);
+	if (countryOnly && countryOnly[1] !== 'FWC') {
+		return jsonResponse({ raw: text, code: null, country: countryOnly[1] });
+	}
+
+	return jsonResponse({ raw: text, code: null, country: null });
 }
 
 function jsonResponse(data: unknown, status = 200) {

@@ -59,7 +59,7 @@ async function fileToBase64(file: Blob): Promise<{ base64: string; mimeType: str
 export async function identifyWithAI(image: Blob): Promise<IdentifyResult> {
 	let toSend: Blob = image;
 	try {
-		toSend = await compressImage(image, 1280, 0.85);
+		toSend = await compressImage(image, 2000, 0.92);
 	} catch (e) {
 		console.warn('Compresión falló, mando original:', e);
 	}
@@ -76,35 +76,28 @@ export async function identifyWithAI(image: Blob): Promise<IdentifyResult> {
 		throw new Error(err.error ?? `HTTP ${res.status}`);
 	}
 
-	const { raw, code }: { raw: string; code: string | null } = await res.json();
+	const { raw, code, country }: { raw: string; code: string | null; country: string | null } =
+		await res.json();
 	const stickers = await db.stickers.toArray();
 
-	if (!code) {
-		return { rawText: raw, matches: [], confidence: 'none', source: 'ai' };
-	}
-
-	const byCode = new Map(stickers.map((s) => [s.code.toUpperCase(), s]));
-	const direct = byCode.get(code);
-	if (direct) {
-		return { rawText: raw, matches: [direct], bestMatch: direct, confidence: 'high', source: 'ai' };
-	}
-
-	const [, prefix, num] = code.match(/^([A-Z]{3})-(\d+)$/) ?? [];
-	if (prefix && num) {
-		const fallback = stickers.find((s) => s.code.toUpperCase() === `${prefix}-${num.padStart(2, '0')}`);
-		if (fallback) {
+	if (code) {
+		const byCode = new Map(stickers.map((s) => [s.code.toUpperCase(), s]));
+		const direct = byCode.get(code);
+		if (direct) {
 			return {
 				rawText: raw,
-				matches: [fallback],
-				bestMatch: fallback,
+				matches: [direct],
+				bestMatch: direct,
 				confidence: 'high',
 				source: 'ai'
 			};
 		}
+	}
 
-		const nearby = stickers.filter((s) => s.code.toUpperCase().startsWith(`${prefix}-`));
+	if (country) {
+		const nearby = stickers.filter((s) => s.code.toUpperCase().startsWith(`${country}-`));
 		if (nearby.length) {
-			return { rawText: raw, matches: nearby.slice(0, 4), confidence: 'low', source: 'ai' };
+			return { rawText: raw, matches: nearby, confidence: 'low', source: 'ai' };
 		}
 	}
 
