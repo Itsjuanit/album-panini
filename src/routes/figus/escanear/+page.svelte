@@ -51,7 +51,34 @@
 		if (previewUrl) URL.revokeObjectURL(previewUrl);
 		previewUrl = undefined;
 		result = undefined;
+		manualCode = '';
 		phase = 'idle';
+	}
+
+	let manualCode = $state('');
+	let manualError = $state<string | undefined>();
+
+	async function submitManual() {
+		manualError = undefined;
+		const raw = manualCode.trim().toUpperCase();
+		const m = raw.match(/^([A-Z]{3})[-\s]?(\d{1,3})$/) ?? raw.match(/^FWC[-\s]?(\d{1,3})$/);
+		if (!m) {
+			manualError = 'Formato esperado: ARG 17, BRA-05, FWC042, etc.';
+			return;
+		}
+		let target: string;
+		if (raw.startsWith('FWC')) {
+			target = `FWC${(m[1] ?? '').padStart(3, '0')}`;
+		} else {
+			target = `${m[1]}-${(m[2] ?? '').padStart(2, '0')}`;
+		}
+		const stickers = await db.stickers.toArray();
+		const found = stickers.find((s) => s.code.toUpperCase() === target);
+		if (!found) {
+			manualError = `No existe ${target} en el álbum`;
+			return;
+		}
+		await pickMatch(found.id, true);
 	}
 </script>
 
@@ -148,14 +175,33 @@
 			<div class="thumb"><img src={previewUrl} alt="Foto" /></div>
 		{/if}
 		<div class="big-icon">😕</div>
-		<h2>No pude leer el número</h2>
+		<h2>No pude leer el código</h2>
 		{#if result?.rawText}
-			<p class="hint">Lo que llegué a leer fue:</p>
+			<p class="hint">Lo que llegué a leer fue ({result.source === 'ai' ? 'AI' : 'OCR'}):</p>
 			<pre class="raw">{result.rawText.trim() || '(nada)'}</pre>
 		{/if}
+
+		<div class="manual-entry">
+			<p class="hint">Escribilo a mano:</p>
+			<div class="manual-row">
+				<input
+					type="text"
+					bind:value={manualCode}
+					placeholder="ej: URU 7"
+					autocapitalize="characters"
+					autocomplete="off"
+					onkeydown={(e) => e.key === 'Enter' && submitManual()}
+				/>
+				<button class="primary small" onclick={submitManual}>OK</button>
+			</div>
+			{#if manualError}
+				<p class="err">{manualError}</p>
+			{/if}
+		</div>
+
 		<div class="actions">
-			<button class="primary" onclick={reset}>📸 Intentar otra foto</button>
-			<a class="ghost" href="/figus">Buscar a mano</a>
+			<button class="primary" onclick={reset}>📸 Probar otra foto</button>
+			<a class="ghost" href="/figus">Buscar en la lista</a>
 		</div>
 	</div>
 {/if}
@@ -404,4 +450,46 @@
 		max-height: 120px;
 	}
 	.no-match-card .hint { color: var(--muted); margin: 0.5rem 0 0.3rem; font-size: 0.85rem; }
+
+	.manual-entry {
+		background: var(--card-solid);
+		border: 1px solid var(--border);
+		border-radius: 12px;
+		padding: 0.8rem;
+		margin: 0.8rem 0;
+		text-align: left;
+	}
+	.manual-entry .hint {
+		margin: 0 0 0.4rem;
+		font-weight: 600;
+		text-align: left;
+	}
+	.manual-row {
+		display: flex;
+		gap: 0.4rem;
+	}
+	.manual-row input {
+		flex: 1;
+		padding: 0.6rem 0.8rem;
+		background: var(--bg);
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		color: var(--text);
+		font-size: 1rem;
+		font-family: inherit;
+		text-transform: uppercase;
+	}
+	.manual-row input:focus {
+		outline: none;
+		border-color: var(--gold);
+	}
+	.primary.small {
+		padding: 0.6rem 1rem;
+		font-size: 0.9rem;
+	}
+	.err {
+		color: var(--bad);
+		font-size: 0.82rem;
+		margin: 0.4rem 0 0;
+	}
 </style>

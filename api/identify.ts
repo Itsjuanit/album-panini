@@ -1,21 +1,26 @@
 const GEMINI_MODEL = 'gemini-flash-latest';
 
-const PROMPT = `Estás viendo una figurita del álbum Panini Mundial 2026.
+const PROMPT = `Estás viendo una figurita del álbum Panini FIFA World Cup 2026 (frente o dorso).
 
-Tu tarea: encontrar el código de la figurita. El formato es "XXX NN" donde:
-- XXX es el código FIFA de 3 letras de la selección (ej: ARG, BRA, FRA, MEX, USA, GER, ESP, ITA, POR, NED, BEL, ENG, CRO, JPN, KOR, MAR, AUS, etc.)
-- NN es un número de 1 a 20
+Tu tarea: encontrar el código identificador. Formato típico:
+- 3 letras MAYÚSCULAS = código FIFA del país (ARG, BRA, FRA, URU, MEX, USA, GER, ESP, ITA, POR, NED, BEL, ENG, CRO, JPN, KOR, MAR, AUS, COL, CHI, PER, ECU, etc.)
+- 1 o 2 dígitos = número del 1 al 20
+- Entre las letras y el número puede haber espacio, guión o nada (ej: "ARG 17", "ARG-17", "ARG17", "URU7", "URU 7")
 
-Este código aparece impreso en la figurita, generalmente abajo o en el borde, a veces sobre el escudo.
+Dónde mirar:
+- FRENTE: el código suele estar en una esquina o borde, en texto chico, a veces sobre el escudo
+- DORSO: con el listado y datos, generalmente arriba, abajo, o al costado del nombre
 
-NO confundas con:
-- La palabra "PANINI" (es la marca)
-- El año "2026"
-- El nombre del jugador
-- Texto del escudo de la selección
+IGNORÁ:
+- "PANINI" (marca)
+- "FIFA" / "WORLD CUP" / "2026"
+- Nombre del jugador
+- Año de nacimiento
+- Números de camiseta (van con el nombre)
+- Texto en el escudo
 
-Respondé SOLAMENTE con el código en formato CODE-NUMBER (ej: ARG-17, BRA-05, MEX-01).
-Si no podés identificarlo con seguridad, respondé exactamente: UNKNOWN`;
+Respondé EXACTAMENTE con el código en formato CODE-NUMBER (ej: ARG-17, URU-07, BRA-05). Sin texto extra, sin comillas.
+Solo si NO ves NADA que parezca a "3 letras + número", respondé: UNKNOWN`;
 
 interface GeminiResponse {
 	candidates?: Array<{
