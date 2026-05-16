@@ -2,7 +2,12 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 
+const BUILD_INFO = `gemini-${new Date().toISOString().slice(0, 16).replace(/[-T:]/g, '')}`;
+
 export default defineConfig({
+	define: {
+		__BUILD_INFO__: JSON.stringify(BUILD_INFO)
+	},
 	server: {
 		port: 4280,
 		strictPort: true,
@@ -33,7 +38,10 @@ export default defineConfig({
 				]
 			},
 			workbox: {
-				globPatterns: ['**/*.{js,css,html,svg,png,webp,ico}']
+				globPatterns: ['**/*.{js,css,html,svg,png,webp,ico}'],
+				skipWaiting: true,
+				clientsClaim: true,
+				cleanupOutdatedCaches: true
 			}
 		})
 	]

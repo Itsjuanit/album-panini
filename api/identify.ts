@@ -1,26 +1,29 @@
 const GEMINI_MODEL = 'gemini-flash-latest';
 
-const PROMPT = `Estás viendo una figurita del álbum Panini FIFA World Cup 2026 (frente o dorso).
+const PROMPT = `Estás viendo una figurita del álbum Panini FIFA World Cup 2026.
 
-Tu tarea: encontrar el código identificador. Formato típico:
-- 3 letras MAYÚSCULAS = código FIFA del país (ARG, BRA, FRA, URU, MEX, USA, GER, ESP, ITA, POR, NED, BEL, ENG, CRO, JPN, KOR, MAR, AUS, COL, CHI, PER, ECU, etc.)
-- 1 o 2 dígitos = número del 1 al 20
-- Entre las letras y el número puede haber espacio, guión o nada (ej: "ARG 17", "ARG-17", "ARG17", "URU7", "URU 7")
+Tu ÚNICA tarea: encontrar el código identificador con formato "XXX N" o "XXX NN" donde:
+- XXX = código FIFA de 3 letras del país (ARG, BRA, URU, MEX, USA, GER, ESP, FRA, POR, NED, BEL, ENG, CRO, JPN, KOR, MAR, AUS, COL, etc.)
+- N o NN = número del 1 al 20
 
-Dónde mirar:
-- FRENTE: el código suele estar en una esquina o borde, en texto chico, a veces sobre el escudo
-- DORSO: con el listado y datos, generalmente arriba, abajo, o al costado del nombre
+DÓNDE BUSCAR (en orden de prioridad):
+1. DORSO de la figurita: hay una pastilla/badge NEGRA arriba a la DERECHA con texto blanco. Ej: "URU 6", "ARG 17", "BRA 11". ESTE ES EL LUGAR PRINCIPAL.
+2. FRENTE de la figurita: borde inferior, texto chico
 
-IGNORÁ:
-- "PANINI" (marca)
-- "FIFA" / "WORLD CUP" / "2026"
+IGNORÁ COMPLETAMENTE (no son el código):
+- "FIFA WORLD CUP 2026" (título)
+- "PANINI" / "paninigroup" (marca)
+- "OFFICIAL LICENSED PRODUCT"
+- "INDUSTRIA ARGENTINA" / "MADE IN..." (lugar de fabricación — NO es código de país)
+- Número de fabricante (5-6 dígitos como "005460")
+- "Esta figurita es parte..." (legal)
 - Nombre del jugador
-- Año de nacimiento
-- Números de camiseta (van con el nombre)
-- Texto en el escudo
+- Año, dorsal, fecha de nacimiento
 
-Respondé EXACTAMENTE con el código en formato CODE-NUMBER (ej: ARG-17, URU-07, BRA-05). Sin texto extra, sin comillas.
-Solo si NO ves NADA que parezca a "3 letras + número", respondé: UNKNOWN`;
+Si ves la pastilla negra arriba a la derecha con "XXX N" o "XXX NN", ESE es el código.
+
+Respondé EXACTAMENTE con el código en formato CODE-NUMBER, ej: URU-06, ARG-17, BRA-05. Sin comillas, sin texto extra, sin explicación.
+Si genuinamente no encontrás un patrón XXX+número, respondé: UNKNOWN`;
 
 interface GeminiResponse {
 	candidates?: Array<{

@@ -86,8 +86,9 @@
 
 <div class="hero" in:fly={{ y: 15, duration: 300 }}>
 	<div class="ico">📷</div>
-	<h1>Escanear figurita</h1>
-	<p>Apuntá a la figu — la AI lee el código del país (ej: <code>ARG 17</code>) y la encuentra sola</p>
+	<h1>Escanear figurita <span class="ai-badge">🤖 AI</span></h1>
+	<p>Apuntá al dorso (la pastilla negra con <code>URU 6</code>) o frente (texto chico). Gemini lo lee solo.</p>
+	<span class="build-info" title="Versión deployada">v: {__BUILD_INFO__}</span>
 </div>
 
 {#if phase === 'idle'}
@@ -117,8 +118,8 @@
 			<div class="dot"></div>
 			<div class="dot"></div>
 		</div>
-		<p>Buscando el número de la figurita…</p>
-		<small>La primera vez tarda un toque más (descarga el motor OCR)</small>
+		<p>🤖 La AI está leyendo la figurita…</p>
+		<small>Suele tardar 1-2 segundos</small>
 	</div>
 {/if}
 
@@ -241,6 +242,29 @@
 		color: var(--muted);
 		font-size: 0.88rem;
 		margin: 0.4rem 0 0;
+	}
+	.ai-badge {
+		display: inline-block;
+		font-size: 0.65rem;
+		background: linear-gradient(135deg, #06b6d4, #3b82f6);
+		color: white;
+		padding: 3px 8px;
+		border-radius: 10px;
+		vertical-align: middle;
+		margin-left: 0.4rem;
+		font-weight: 700;
+		letter-spacing: 0.5px;
+	}
+	.build-info {
+		display: inline-block;
+		margin-top: 0.6rem;
+		font-size: 0.65rem;
+		color: var(--muted);
+		background: rgba(255, 255, 255, 0.05);
+		padding: 2px 8px;
+		border-radius: 6px;
+		font-family: ui-monospace, monospace;
+		opacity: 0.7;
 	}
 	code {
 		background: rgba(255, 255, 255, 0.08);
